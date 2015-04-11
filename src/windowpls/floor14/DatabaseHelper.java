@@ -97,16 +97,23 @@ public class DatabaseHelper extends SQLiteAssetHelper {
 			String text = overrideCursor.getString(overrideCursor.getColumnIndexOrThrow("text"));
 			int chance = overrideCursor.getInt(overrideCursor.getColumnIndexOrThrow("chance"));
 			
+			Action newAction = new Action(type, text, chance, null);
+			
 			// get unlocks
-			int actionId = overrideCursor.getInt(overrideCursor.getColumnIndexOrThrow("actionId"));
+			List<Action.ActionUnlocks> results = new ArrayList<Action.ActionUnlocks>();
+			
+			int actionId = overrideCursor.getInt(overrideCursor.getColumnIndexOrThrow("id"));
 			Cursor unlockCursor = getReadableDatabase().rawQuery("SELECT * FROM Action2Unlocks WHERE action_id = " + actionId, null);
+			unlockCursor.moveToFirst();
 			for (int j = 0; j < unlockCursor.getCount(); j++) {
 				String unlockType = unlockCursor.getString(unlockCursor.getColumnIndexOrThrow("unlock_type"));			
-				int unlockId = unlockCursor.getInt(unlockCursor.getColumnIndexOrThrow("unlock_id")) % 1000;
+				int unlockId = unlockCursor.getInt(unlockCursor.getColumnIndexOrThrow("unlock_id")) % 1000;				
+				results.add(newAction.new ActionUnlocks(unlockType, unlockId));				
 				unlockCursor.moveToNext();
 			}
 			
-			person.addActionOverride(person.new Action(type, text, chance, null));		
+			newAction.setResults(results);
+			person.addActionOverride(newAction);		
 		}
 				
 		return person;

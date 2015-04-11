@@ -1,6 +1,8 @@
 package windowpls.floor14;
 
-public class Group implements Unlockable {
+import java.util.List;
+
+public class Group implements Actionable {
 	private String name;
 	private boolean isActive;
 	
@@ -16,5 +18,14 @@ public class Group implements Unlockable {
 	public Group(String name) {
 		this.name = name;
 		isActive = false;
+	}
+	
+	public List<Action> getAction(String actionType) {
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		return name;
 	}
 }

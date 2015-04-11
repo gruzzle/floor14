@@ -1,10 +1,12 @@
 package windowpls.floor14;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
-public class Person implements Unlockable {
+public class Person implements Actionable {
 	public static final Random random = new Random();
 	
 	private String name;
@@ -18,17 +20,25 @@ public class Person implements Unlockable {
 	public void setActive(boolean active) { isActive = active; }
 	public void addActionOverride(Action override) { actionOverrides.add(override); } // TODO check for duplicates
 	
-	private List<Action> actionOverrides; // or maybe have a map of action name strings to Actions, with custom actions overwritten
+	private Map<String, Action> defaultActions; // maybe should be static	
+	private List<Action> actionOverrides; // could instead have a map of action name strings to Actions, with custom actions overwritten
 	
 	private static final String[] firstNames = {"Jana", "Boggs", "Stripes", "Jewf", "Bindu", "Les", "Scott", "Mrs. T.R."};
     private static final String[] lastNames = {"Dobson", "Suggins", "Bean", "Rams"};
     
     public Person() {
+    	defaultActions = new HashMap<String, Action>();    	
+    	defaultActions.put("Surveillance", new Action("Surveillance", "No luck", 100, null));
+    	defaultActions.put("Pursuit", new Action("Pursuit", "No luck", 100, null));
+    	defaultActions.put("Interrogate", new Action("Interrogate", "No luck", 100, null));
+    	defaultActions.put("Removal", new Action("Removal", "No luck", 100, null));
+    	defaultActions.put("Smear", new Action("Smear", "No luck", 100, null));
+    	
     	actionOverrides = new ArrayList<Action>();
     	name = String.format("%s %s", firstNames[random.nextInt(firstNames.length)], lastNames[random.nextInt(lastNames.length)]);
     }
 	
-	public ActionResult doAction(String actionType) {
+	public List<Action> getAction(String actionType) {
 		// search overrides for actions of the specified type
 		List<Action> actions = new ArrayList<Action>();
 		for (Action overrideAction : actionOverrides) {
@@ -37,62 +47,20 @@ public class Person implements Unlockable {
 			}
 		}
 		
-		// if there are override actions, do them
-		if (actions.size() > 0) {
-			
+		// if no override actions were found, use default action
+		if (actions.size() == 0) {
+			actions.add(defaultActions.get(actionType));
 		}		
-		// otherwise, do the default action of this type
-		else {
-			switch(actionType) {
-			case "Surveillance":
-				break;
-			case "Pursuit":
-				break;
-			case "Interrogate":
-				break;
-			case "Removal":
-				break;
-			case "Smear":
-				break;
-			}
-		}
-		
-		return null;
+	
+		return actions;
 	}
 	
-	public class Action {
-		private String type;
-		private String text;
-		private int chance;
-		private List<ActionResult> results; 
-		
-		public String getType() { return type; }
-		public String getText() { return text; }
-		public int getChance() { return chance; }
-		public List<ActionResult> getResults() { return results; }
-		
-		public Action(String type, String text, int chance, List<ActionResult> results) {
-			this.type = type;
-			this.text = text;
-			this.chance = chance;
-			this.results = results;
-		}
+	public Action getDefaultAction(String actionType) { 
+		return defaultActions.get(actionType); 
 	}
 	
-	public class ActionResult {
-		public String unlockType; // person, location, flag etc.
-		public int id; // index of unlocked thing 
-		public boolean newValue; // if a flag is being changed
-		
-		public ActionResult (String unlockType, int id) {
-			this.unlockType = unlockType;
-			this.id = id;
-		}
-		
-		public ActionResult (String unlockType, int id, boolean newValue) {
-			this.unlockType = unlockType;
-			this.id = id;
-			this.newValue = newValue;
-		}
+	@Override
+	public String toString() {
+		return String.format("%s (%s)", name, title);
 	}
 }

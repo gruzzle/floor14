@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import windowpls.floor14.Person.ActionResult;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.util.Log;
 
 public class Mission {
@@ -19,6 +20,10 @@ public class Mission {
 	private final Group[] groups;		
 	private final Flag[] flags;
 	
+	public Person[] getPeople() { return people; }
+	public Location[] getLocations() { return locations; }
+	public Group[] getGroups() { return groups; }
+		
 	public Mission(int missionId) {
 		this.missionId = missionId;
 		
@@ -55,5 +60,27 @@ public class Mission {
 			}
 		}
 		
+	}
+	
+	public List<Actionable> getActive() {
+		List<Actionable> active = new ArrayList<Actionable>();
+		
+		for (Person p : people) {
+			if (p.isActive()) {
+				active.add(p);
+			}
+		}
+		for (Location l : locations) {
+			if (l.isActive()) {
+				active.add(l);
+			}
+		}
+		for (Group g : groups) {
+			if (g.isActive()) {
+				active.add(g);
+			}
+		}
+		
+		return active;
 	}
 }
