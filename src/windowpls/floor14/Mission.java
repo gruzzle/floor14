@@ -14,6 +14,8 @@ public class Mission {
 	
 	public static DatabaseHelper db;
 	private int missionId;
+	private int time;
+	private int damage;
 	
 	private final  Person[] people;
 	private final Location[] locations;
@@ -23,9 +25,14 @@ public class Mission {
 	public Person[] getPeople() { return people; }
 	public Location[] getLocations() { return locations; }
 	public Group[] getGroups() { return groups; }
+	public Flag[] getFlags() { return flags; }
+	public int getTime() { return time; }
+	public int getDamage() { return damage; }
 		
 	public Mission(int missionId) {
 		this.missionId = missionId;
+		time = 0;
+		damage = 0;
 		
 		people = db.getPeopleByMission(missionId).toArray(new Person[0]);
 		locations = db.getLocationsByMission(missionId).toArray(new Location[0]);
@@ -59,7 +66,6 @@ public class Mission {
 				Log.d(TAG, String.format("%s, %s", p.getName(), p.getTitle()));
 			}
 		}
-		
 	}
 	
 	public List<Actionable> getActive() {
@@ -82,5 +88,21 @@ public class Mission {
 		}
 		
 		return active;
+	}
+	
+	public void incTime() {
+		time += 1;
+	}
+	
+	public void addDamage(int damage) {
+		this.damage += damage;
+	}
+	
+	public void setFlag(String flagName, boolean newValue) {
+		for (Flag f : flags) {
+			if (f.name.equals(flagName)) {
+				f.setValue(newValue);
+			}
+		}
 	}
 }

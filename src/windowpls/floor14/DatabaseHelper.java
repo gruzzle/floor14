@@ -107,13 +107,20 @@ public class DatabaseHelper extends SQLiteAssetHelper {
 			unlockCursor.moveToFirst();
 			for (int j = 0; j < unlockCursor.getCount(); j++) {
 				String unlockType = unlockCursor.getString(unlockCursor.getColumnIndexOrThrow("unlock_type"));			
-				int unlockId = unlockCursor.getInt(unlockCursor.getColumnIndexOrThrow("unlock_id")) % 1000;				
-				results.add(newAction.new ActionUnlocks(unlockType, unlockId));				
+				int unlockId = unlockCursor.getInt(unlockCursor.getColumnIndexOrThrow("unlock_id")) % 1000;	
+				if (unlockType.equals("Flag")) {
+					boolean newValue = unlockCursor.getInt(unlockCursor.getColumnIndexOrThrow("new_value")) == 0 ? false : true;
+					results.add(newAction.new ActionUnlocks(unlockType, unlockId, newValue));
+				}
+				else {
+					results.add(newAction.new ActionUnlocks(unlockType, unlockId));
+				}
 				unlockCursor.moveToNext();
 			}
 			
 			newAction.setResults(results);
 			person.addActionOverride(newAction);		
+			overrideCursor.moveToNext();
 		}
 				
 		return person;
@@ -150,5 +157,25 @@ public class DatabaseHelper extends SQLiteAssetHelper {
 		}
 		
 		return flags;
+	}
+	
+	public List<Event> getMissionEvents(int id) {
+		List<Event> events = new ArrayList<Event>();
+		
+		SQLiteDatabase db = getReadableDatabase();		
+		Cursor c = db.rawQuery("SELECT * FROM events WHERE mission_id = " + id, null);		
+		c.moveToFirst();
+		
+		for (int i = 0; i < c.getCount(); i++) {
+			String type = c.getString(c.getColumnIndexOrThrow("type"));
+			String text = c.getString(c.getColumnIndexOrThrow("text"));
+			int damage = c.getInt(c.getColumnIndexOrThrow("damage"));
+			int time = c.getInt(c.getColumnIndexOrThrow("time"));
+			// TODO add conditions
+			events.add(new Event(type, text, damage, time, new ArrayList<Event.Condition>()));
+			c.moveToNext();
+		}
+		
+		return events;
 	}
 }

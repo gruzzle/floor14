@@ -22,7 +22,8 @@ public class MainActivity extends ActionBarActivity {
 	
 	private static final String[] actionTypes = { "Surveillance", "Pursuit", "Interrogate", "Removal", "Smear" };    
 	private DatabaseHelper db;
-	private Mission mission;
+	private List<Mission> missions;
+	private Mission selectedMission;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -30,84 +31,108 @@ public class MainActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_main);
 		
 		DatabaseHelper.forceDatabaseReload(this);
-		db = new DatabaseHelper(this);
-
-		Mission.db = db;		
-		mission = new Mission(1);
+		Mission.db = new DatabaseHelper(this);
 		
-		updateSpinners();
+		missions = new ArrayList<Mission>();
+		missions.add(new Mission(1));
+		selectedMission = missions.get(0);
 		
-		//Person initialPerson = mission.getPeople().get(0);		
-						
-		//TextView personTextView = (TextView) findViewById(R.id.person_text);
-		//personTextView.setText(initialPerson.getName());		
-	}
+		updateUI();	}
 	
-	private void updateSpinners() {
-		Spinner personSpinner = (Spinner)findViewById(R.id.spinner_person);
-		personSpinner.setAdapter(new ArrayAdapter<Actionable>(this, android.R.layout.simple_spinner_dropdown_item, mission.getActive()));
+	private void updateUI() {
+		Spinner personSpinner = (Spinner) findViewById(R.id.spinner_person);
+		personSpinner.setAdapter(new ArrayAdapter<Actionable>(this, android.R.layout.simple_spinner_dropdown_item, selectedMission.getActive()));
 		
-		// don't really need to update this one
-		Spinner actionSpinner = (Spinner)findViewById(R.id.spinner_action);
-		actionSpinner.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, actionTypes));				
+		// don't really need to update this one after first time
+		Spinner actionSpinner = (Spinner) findViewById(R.id.spinner_action);
+		actionSpinner.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, actionTypes));
+		
+		String flagText = String.format("Turns elapsed: %s\nDamage taken: %s\n\nFlags:\n", selectedMission.getTime(), selectedMission.getDamage());
+		for (Flag f : selectedMission.getFlags()) {
+			flagText += String.format("%s: %s\n", f.name, f.value);
+		}
+		TextView flagTextView = (TextView) findViewById(R.id.text_flagbox);
+		flagTextView.setText(flagText);
 	}
 	
 	public void onClickAction(View view) {
+		selectedMission.incTime();
+		
 		Spinner personSpinner = (Spinner) findViewById(R.id.spinner_person);		
 		Actionable target = (Actionable) personSpinner.getSelectedItem();
 
 		Spinner actionSpinner = (Spinner) findViewById(R.id.spinner_action);		
 		String actionType = (String) actionSpinner.getSelectedItem();
 		
-		writeToConsole(String.format("Attempting to %s %s...\n", actionType.toLowerCase(Locale.US), target.getName()));
+		writeToConsole(String.format("Attempting to %s %s...", actionType.toLowerCase(Locale.US), target.getName()));
 		
-		// assuming person
-		Person person = (Person) target;
 		// process only first action
-		processAction(person, person.getAction(actionType).get(0));
+		if (target.getAction(actionType).get(0) != null) {
+			processAction(target, target.getAction(actionType).get(0));
+		}
 	}
 	
 	private void writeToConsole(String string) {
 		TextView console = (TextView) findViewById(R.id.text_console);
-		console.append(string);
-		
+		console.append(string + "\n");
 	}
 	
-	private void processAction(Person person, Action action) {
+	private void showAlertDialog(String title, String text) {
 		new AlertDialog.Builder(this)
-	    .setTitle(String.format("%s on %s", action.getType(), person.getName()))
-	    .setMessage(String.format("You %s %s the %s.\n%s", action.getType().toLowerCase(Locale.US), person.getName(), person.getTitle(), action.getText()))		
+	    .setTitle(title)
+	    .setMessage(text)
 	    .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 	        public void onClick(DialogInterface dialog, int which) { 
 	        }
 	     })
-	    .show();
+	    .show();		
+	}
+	
+	private void processAction(Actionable target, Action action) {		
+		String unlockText = "";
 		
 		List<Action.ActionUnlocks> unlocks = action.getResults();
 		for (Action.ActionUnlocks unlock : unlocks) {
+			writeToConsole("unlockType: " + unlock.unlockType);	
 			switch(unlock.unlockType) {
 			case "Person":
-				Person newPerson = mission.getPeople()[unlock.id];
+				Person newPerson = selectedMission.getPeople()[unlock.id];
 				newPerson.setActive(true);
-				writeToConsole(String.format("Unlocked %s.", newPerson.getName()));
+				unlockText = String.format("Unlocked %s the %s.", newPerson.getName(), newPerson.getTitle());
+				writeToConsole(unlockText);				
 				break;
 			case "Location":
-				Location newLocation = mission.getLocations()[unlock.id];
+				Location newLocation = selectedMission.getLocations()[unlock.id];
 				newLocation.setActive(true);
-				writeToConsole(String.format("Unlocked %s.", newLocation.getName()));
+				unlockText = String.format("Unlocked %s.", newLocation.getName());
+				writeToConsole(unlockText);				
 				break;
 			case "Group":
-				Group newGroup = mission.getGroups()[unlock.id];
+				Group newGroup = selectedMission.getGroups()[unlock.id];
 				newGroup.setActive(true);
-				writeToConsole(String.format("Unlocked %s.", newGroup.getName()));
+				unlockText = String.format("Unlocked %s.", newGroup.getName());
+				writeToConsole(unlockText);				
 				break;
 			case "Flag":
-				// TODO
+				Flag updatedFlag = selectedMission.getFlags()[unlock.id];
+				selectedMission.setFlag(updatedFlag.name, unlock.newValue);
+				unlockText = String.format("Set flag %s to %s.", updatedFlag.name, unlock.newValue);
+				writeToConsole(unlockText);				
 				break;
 			}
 		}
+
+		String alertText;
+		if (target instanceof Person) {
+			alertText = String.format("You %s %s the %s.\n", action.getType().toLowerCase(Locale.US), target.getName(), ((Person)target).getTitle());			
+		}
+		else {
+			alertText = String.format("You %s the %s.\n q", action.getType().toLowerCase(Locale.US), target.getName());			
+		}
+		alertText = String.format("%s\n%s\n\n%s", alertText, action.getText(), unlockText);
 		
-		updateSpinners();
+		updateUI();		
+		showAlertDialog(String.format("%s on %s", action.getType(), target.getName()), alertText);		
 	}
 
 	@Override

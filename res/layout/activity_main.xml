@@ -28,9 +28,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/spinner_action"
-        android:onClick="onClickAction"
+       	android:onClick="onClickAction"
         android:padding="10dp"
         android:text="Do Action" />
+    
+    <TextView
+        android:id="@+id/text_flagbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/button_do_action"
+        android:padding="15dp" />
 
     <ScrollView
         android:id="@+id/scroll_console"
